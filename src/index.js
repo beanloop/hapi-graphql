@@ -187,12 +187,10 @@ function register(server, options = {}, next) {
   return next();
 }
 
-
 /**
  * Define plugin attributes
  */
 register.attributes = {name: 'graphql', version};
-
 
 /**
  * Export plugin
