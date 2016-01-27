@@ -25,12 +25,16 @@ server.register({
   register: GraphQL,
   options: {
     query: {
-      # options, see below
+      schema: TestSchema,
+      rootValue: {},
+      pretty: false
     },
     // OR
     //
-    // query: (request) => ({
-    //   # options, see below
+    // query: (request) => {{
+    //   schema: TestSchema,
+    //   rootValue: {},
+    //   pretty: false
     // }),
     route: {
       path: '/graphql',
