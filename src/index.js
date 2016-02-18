@@ -143,7 +143,6 @@ const handler = (route, options = {}) => async (request, reply) => {
   }
 };
 
-
 /**
  * Define handler defaults
  */
@@ -157,7 +156,6 @@ handler.defaults = (method) => {
   }
   return {};
 };
-
 
 /**
  * Define plugin
