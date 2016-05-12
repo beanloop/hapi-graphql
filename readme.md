@@ -34,8 +34,8 @@ server.register({
     // query: (request) => {{
     //   schema: TestSchema,
     //   rootValue: {},
-    //   pretty: false
-    // }),
+    //   graphiql: true,
+    // })
     route: {
       path: '/graphql',
       config: {}
