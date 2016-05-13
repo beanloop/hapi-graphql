@@ -194,4 +194,3 @@ register.attributes = {name: 'graphql', version};
  * Export plugin
  */
 export default register;
-
