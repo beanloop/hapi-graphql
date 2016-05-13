@@ -195,4 +195,3 @@ register.attributes = {name: 'graphql', version};
  */
 export default register;
 
-
