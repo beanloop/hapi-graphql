@@ -7,7 +7,8 @@ import {Stream} from 'stream';
 import {graphql} from 'graphql';
 import {formatError} from 'graphql/error';
 import {version} from '../package.json';
-
+import renderGraphiQL from './renderGraphiQL';
+import accepts from 'accepts';
 
 /**
  * Define constants
@@ -18,7 +19,8 @@ const optionsSchema = {
     Joi.object({
       schema: Joi.object().required(),
       rootValue: Joi.object(),
-      pretty: Joi.boolean()
+      pretty: Joi.boolean(),
+      graphiql: Joi.boolean()
     }).required()
   ],
   route: Joi.object().keys({
@@ -93,16 +95,39 @@ const getGraphQLParams = (request, payload = {}) => {
   return {query, variables, operationName};
 };
 
+/**
+  * Helper function to determine if GraphiQL can be displayed.
+  */
+ const canDisplayGraphiQL = (request, data) => {
+
+   // If `raw` exists, GraphiQL mode is not enabled.
+   var raw = request.query.raw !== undefined || data.raw !== undefined;
+
+   // Allowed to show GraphiQL if not requested as raw and this request
+   // prefers HTML over JSON.
+   const accept = accepts(request.raw.req);
+   return !raw && accept.type(['json', 'html']) === 'html';
+ };
+
+
 
 /**
  * Define GraphQL runner
  */
-const runGraphQL = async (request, payload, schema, rootValue) => {
-  // Get GraphQL params from the request and POST body data.
-  const {query, variables, operationName} = getGraphQLParams(request, payload);
+const runGraphQL = async (params, schema, rootValue, showGraphiQL) => {
+
+  const { query, variables, operationName } = params;
+
+  if (!query) {
+    if (showGraphiQL) {
+      return null;
+    }
+
+    throw Boom.badRequest('Must provide query string.');
+  }
 
   // Run GraphQL query.
-  const result = await graphql(schema, query, rootValue, variables, operationName);
+  const result = await graphql(schema, query, rootValue, undefined, variables, operationName);
 
   // Format any encountered errors.
   if (result.errors) {
@@ -120,7 +145,7 @@ const runGraphQL = async (request, payload, schema, rootValue) => {
 const handler = (route, options = {}) => async (request, reply) => {
   try {
     // Get GraphQL options given this request.
-    const {schema, rootValue, pretty} = getOptions(options, request);
+    const {schema, rootValue, pretty, graphiql} = options;
 
     // Set up JSON output settings
     if (pretty) {
@@ -130,8 +155,20 @@ const handler = (route, options = {}) => async (request, reply) => {
     // Parse payload
     const payload = await parsePayload(request);
 
+    // Get GraphQL params from the request and POST body data.
+    const params = await getGraphQLParams(request, payload);
+
+    // Can we show graphiQL?
+    const showGraphiQL = graphiql && await canDisplayGraphiQL(request, payload);
+
     // Run GraphQL
-    const result = await runGraphQL(request, payload, schema, rootValue);
+    const result = await runGraphQL(params, schema, rootValue, showGraphiQL);
+
+    // Show GraphiQL if we can
+    if (showGraphiQL) {
+      const { query, variables } = params;
+      return reply(renderGraphiQL({ query, variables, result }));
+    }
 
     // Return result
     return reply(result)
