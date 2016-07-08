@@ -1,10 +1,13 @@
 # GraphQL Hapi Plugin
 
+This is a fork of [hapi-graphql](https://github.com/SimonDegraeve/hapi-graphql) which addresses some problems
+and uses an updated version of GraphQL.
+
 Create a GraphQL HTTP server with [Hapi](http://hapijs.com).
 Port from [express-graphql](https://github.com/graphql/express-graphql).
 
 ```js
-npm install --save hapi-graphql
+npm install --save hapi-graphql-updated
 ```
 
 ### Example
