@@ -20,7 +20,8 @@ const optionsSchema = {
       schema: Joi.object().required(),
       rootValue: Joi.object(),
       pretty: Joi.boolean(),
-      graphiql: Joi.boolean()
+      graphiql: Joi.boolean(),
+      contextMapper: Joi.function()
     }).required()
   ],
   route: Joi.object().keys({
@@ -29,6 +30,9 @@ const optionsSchema = {
   }).required()
 };
 
+const defaultContextMapper = request => ({
+  auth: request.auth,
+});
 
 /**
  * Define helper: get options from object/function
@@ -114,7 +118,7 @@ const getGraphQLParams = (request, payload = {}) => {
 /**
  * Define GraphQL runner
  */
-const runGraphQL = async (params, schema, rootValue, showGraphiQL) => {
+const runGraphQL = async (params, schema, rootValue, context, showGraphiQL) => {
 
   const { query, variables, operationName } = params;
 
@@ -127,7 +131,7 @@ const runGraphQL = async (params, schema, rootValue, showGraphiQL) => {
   }
 
   // Run GraphQL query.
-  const result = await graphql(schema, query, rootValue, undefined, variables, operationName);
+  const result = await graphql(schema, query, rootValue, context, variables, operationName);
 
   // Format any encountered errors.
   if (result.errors) {
@@ -145,7 +149,7 @@ const runGraphQL = async (params, schema, rootValue, showGraphiQL) => {
 const handler = (route, options = {}) => async (request, reply) => {
   try {
     // Get GraphQL options given this request.
-    const {schema, rootValue, pretty, graphiql} = options;
+    const {schema, rootValue, pretty, graphiql, contextMapper = defaultContextMapper} = options;
 
     // Set up JSON output settings
     if (pretty) {
@@ -158,11 +162,13 @@ const handler = (route, options = {}) => async (request, reply) => {
     // Get GraphQL params from the request and POST body data.
     const params = await getGraphQLParams(request, payload);
 
+    const context = contextMapper(request);
+
     // Can we show graphiQL?
     const showGraphiQL = graphiql && await canDisplayGraphiQL(request, payload);
 
     // Run GraphQL
-    const result = await runGraphQL(params, schema, rootValue, showGraphiQL);
+    const result = await runGraphQL(params, schema, rootValue, context, showGraphiQL);
 
     // Show GraphiQL if we can
     if (showGraphiQL) {
