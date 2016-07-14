@@ -21,7 +21,7 @@ const optionsSchema = {
       rootValue: Joi.object(),
       pretty: Joi.boolean(),
       graphiql: Joi.boolean(),
-      contextMapper: Joi.function()
+      contextMapper: Joi.func()
     }).required()
   ],
   route: Joi.object().keys({
