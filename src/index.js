@@ -21,13 +21,14 @@ const optionsSchema = {
       rootValue: Joi.object(),
       pretty: Joi.boolean(),
       graphiql: Joi.boolean(),
-      contextMapper: Joi.function()
-    }).required()
+      contextMapper: Joi.function(),
+      onError: Joi.function(),
+    }).required(),
   ],
   route: Joi.object().keys({
     path: Joi.string().required(),
-    config: Joi.object()
-  }).required()
+    config: Joi.object(),
+  }).required(),
 };
 
 const defaultContextMapper = request => ({
@@ -118,7 +119,7 @@ const getGraphQLParams = (request, payload = {}) => {
 /**
  * Define GraphQL runner
  */
-const runGraphQL = async (params, schema, rootValue, context, showGraphiQL) => {
+const runGraphQL = async (params, schema, rootValue, context, onError, showGraphiQL) => {
 
   const { query, variables, operationName } = params;
 
@@ -135,6 +136,9 @@ const runGraphQL = async (params, schema, rootValue, context, showGraphiQL) => {
 
   // Format any encountered errors.
   if (result.errors) {
+    if (onError) {
+      onError(result);
+    }
     result.errors = result.errors.map(formatError);
   }
 
@@ -149,7 +153,9 @@ const runGraphQL = async (params, schema, rootValue, context, showGraphiQL) => {
 const handler = (route, options = {}) => async (request, reply) => {
   try {
     // Get GraphQL options given this request.
-    const {schema, rootValue, pretty, graphiql, contextMapper = defaultContextMapper} = options;
+    const {
+      schema, rootValue, pretty, graphiql, contextMapper = defaultContextMapper, onError,
+    } = options;
 
     // Set up JSON output settings
     if (pretty) {
@@ -168,7 +174,7 @@ const handler = (route, options = {}) => async (request, reply) => {
     const showGraphiQL = graphiql && await canDisplayGraphiQL(request, payload);
 
     // Run GraphQL
-    const result = await runGraphQL(params, schema, rootValue, context, showGraphiQL);
+    const result = await runGraphQL(params, schema, rootValue, context, onError, showGraphiQL);
 
     // Show GraphiQL if we can
     if (showGraphiQL) {
