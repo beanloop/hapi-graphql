@@ -75,10 +75,10 @@ const parsePayload = async (request) => {
 /**
  * Define helper: get GraphQL parameters from query/payload
  */
-const getGraphQLParams = (request, payload = {}) => {
+const getGraphQLParams = (request, payload = {}, showGraphiQL) => {
   // GraphQL Query string.
   const query = request.query.query || payload.query;
-  if (!query) {
+  if (!showGraphiQL && !query) {
     throw Boom.badRequest('Must provide query string.');
   }
 
@@ -165,13 +165,13 @@ const handler = (route, options = {}) => async (request, reply) => {
     // Parse payload
     const payload = await parsePayload(request);
 
-    // Get GraphQL params from the request and POST body data.
-    const params = await getGraphQLParams(request, payload);
-
-    const context = contextMapper(request);
-
     // Can we show graphiQL?
     const showGraphiQL = graphiql && await canDisplayGraphiQL(request, payload);
+
+    // Get GraphQL params from the request and POST body data.
+    const params = await getGraphQLParams(request, payload, showGraphiQL);
+
+    const context = contextMapper(request);
 
     // Run GraphQL
     const result = await runGraphQL(params, schema, rootValue, context, onError, showGraphiQL);
