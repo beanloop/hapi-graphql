@@ -42,6 +42,6 @@
   },
   "peerDependencies": {
     "babel-runtime": "^6.6.1",
-    "graphql": "^0.6.0"
+    "graphql": "0.6 - 0.7"
   }
 }
