@@ -137,10 +137,17 @@ const runGraphQL = async (params, schema, rootValue, context, onError, showGraph
   // Format any encountered errors.
   if (result.errors) {
     if (onError) {
-      onError(result);
+      const errors = onError(result);
+      if (errors) {
+        result.errors = errors;
+      } else {
+        result.errors = result.errors.map(formatError);
+      }
+    } else {
+      result.errors = result.errors.map(formatError);
     }
-    result.errors = result.errors.map(formatError);
   }
+
 
   // Return GraphQL result
   return result;
